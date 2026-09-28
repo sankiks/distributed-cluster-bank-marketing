@@ -1,0 +1,62 @@
+name: bank-marketing
+services:
+  spark-master:
+    build: .
+    image: bank-spark
+    hostname: spark-master
+    volumes: 
+      
+      - type: bind
+        source: ./simple_dataframe.py # relative file location on host. Relative to compose file location
+        target: /opt/spark/code/simple_dataframe.py #target directory of ml.py
+        bind: 
+          create_host_path: false
+      - type: bind
+        source: ./bank-full.csv
+        target: /opt/spark/data/bank-full.csv #target directory of ml.py
+        bind: 
+          create_host_path: false
+
+                
+    command: /opt/spark/sbin/start-master.sh 
+    
+    ports:
+      - 8080:8080
+    environment:
+      - SPARK_NO_DAEMONIZE=1
+
+  
+  worker1:
+    hostname: worker1
+    build: .
+    image: bank-spark
+    depends_on:
+      - spark-master
+    volumes:
+      - type: bind
+        source: ./bank-full.csv
+        target: /opt/spark/data/bank-full.csv
+        bind:
+          create_host_path: false
+    environment:
+      - SPARK_NO_DAEMONIZE=1
+    # command to the spark image run script and specify service ports
+    command: /opt/spark/sbin/start-worker.sh spark://spark-master:7077
+
+
+  worker2:
+    hostname: worker2
+    build: .
+    image: bank-spark
+    depends_on:
+      - spark-master
+    volumes:
+      - type: bind
+        source: ./bank-full.csv
+        target: /opt/spark/data/bank-full.csv
+        bind:
+          create_host_path: false
+    environment:
+      - SPARK_NO_DAEMONIZE=1
+    # command to the spark image run script and specify service ports
+    command: /opt/spark/sbin/start-worker.sh spark://spark-master:7077
