@@ -1,0 +1,88 @@
+# Project name for the Spark cluster
+name: bank-marketing-karim
+
+services:
+  # Spark master node configuration
+  spark-master:
+    build: .
+    image: bank-spark
+    hostname: spark-master
+    deploy:
+      resources:
+        limits:
+          cpus: '1.0'
+          memory: 512M
+    volumes: 
+      # Mount python script and dataset files
+      - type: bind
+        source: ./part1_sequential.py
+        target: /opt/spark/code/part1_sequential.py
+        bind: 
+          create_host_path: false
+      - type: bind
+        source: ./bank_master.csv
+        target: /opt/spark/data/bank_master.csv
+        bind: 
+          create_host_path: false
+      - type: bind
+        source: ./bank_worker1.csv
+        target: /opt/spark/data/bank_worker1.csv
+        bind: 
+          create_host_path: false
+      - type: bind
+        source: ./bank_worker2.csv
+        target: /opt/spark/data/bank_worker2.csv
+        bind: 
+          create_host_path: false
+    # Start Spark master daemon
+    command: /opt/spark/sbin/start-master.sh 
+    ports:
+      - 8080:8080
+    environment:
+      - SPARK_NO_DAEMONIZE=1
+
+  # Spark worker 1 configuration
+  worker1:
+    hostname: worker1
+    build: .
+    image: bank-spark
+    depends_on:
+      - spark-master
+    deploy:
+      resources:
+        limits:
+          cpus: '2.0'
+          memory: 1000M
+    volumes:
+      - type: bind
+        source: ./bank_worker1.csv
+        target: /opt/spark/data/bank_worker1.csv
+        bind:
+          create_host_path: false
+    environment:
+      - SPARK_NO_DAEMONIZE=1
+    # Start worker and connect to master
+    command: /opt/spark/sbin/start-worker.sh spark://spark-master:7077
+
+  # Spark worker 2 configuration
+  worker2:
+    hostname: worker2
+    build: .
+    image: bank-spark
+    depends_on:
+      - spark-master
+    deploy:
+      resources:
+        limits:
+          cpus: '2.0'
+          memory: 1000M
+    volumes:
+      - type: bind
+        source: ./bank_worker2.csv
+        target: /opt/spark/data/bank_worker2.csv
+        bind:
+          create_host_path: false
+    environment:
+      - SPARK_NO_DAEMONIZE=1
+    # Start worker and connect to master
+    command: /opt/spark/sbin/start-worker.sh spark://spark-master:7077
