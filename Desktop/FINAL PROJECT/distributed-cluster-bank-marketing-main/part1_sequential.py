@@ -37,6 +37,8 @@ df_indexed = StringIndexer(inputCol="poutcome", outputCol="poutcome_idx", handle
 label_indexer = StringIndexer(inputCol="y", outputCol="label", handleInvalid="keep")
 df_indexed = label_indexer.fit(df_indexed).transform(df_indexed)
 
+
+
 # select features and assemble into vector
 numeric_cols = ['age', 'balance', 'day', 'duration', 'campaign', 'pdays', 'previous']
 cat_cols = ['job_idx', 'marital_idx', 'education_idx', 'default_idx', 'housing_idx', 'loan_idx', 'contact_idx', 'month_idx', 'poutcome_idx']
@@ -45,6 +47,7 @@ all_features = numeric_cols + cat_cols
 
 assembler = VectorAssembler(inputCols=all_features, outputCol="features")
 final_data = assembler.transform(df_indexed).select("features", "label")
+
 
 # split train and test data
 train_data, test_data = final_data.randomSplit([0.7, 0.3], seed=42)
